@@ -166,10 +166,7 @@ h4 {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, var(--gold-400) 0%, var(--gold-500) 40%, #e08a10 70%, var(--brand-cyan) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--gold-500);
 }
 
 .eyebrow {
