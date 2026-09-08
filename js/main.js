@@ -207,25 +207,67 @@
       const btn = form.querySelector('[type="submit"]');
       const label = btn?.querySelector(".btn-label");
       const loading = btn?.querySelector(".btn-loading");
+      let errorBox = form.querySelector(".form-error");
+      if (!errorBox) {
+        errorBox = document.createElement("p");
+        errorBox.className = "form-error";
+        errorBox.hidden = true;
+        errorBox.setAttribute("role", "alert");
+        errorBox.style.color = "#c0392b";
+        errorBox.style.marginTop = "8px";
+        errorBox.style.fontSize = "0.85rem";
+        form.querySelector(".form-fine")?.insertAdjacentElement("afterend", errorBox);
+      }
 
       if (btn) btn.disabled = true;
       if (label) label.hidden = true;
       if (loading) loading.hidden = false;
+      errorBox.hidden = true;
 
-      // Simulate submission — production would POST to a backend / form service
-      setTimeout(() => {
-        form.querySelectorAll(".field, .form-row, .btn-full, .form-fine").forEach((el) => {
-          el.style.display = "none";
+      // Submits via FormSubmit (formsubmit.co) — no backend required.
+      // NOTE: the destination inbox must click the one-time "Please confirm"
+      // email FormSubmit sends on the very first real submission before
+      // leads start arriving.
+      fetch("https://formsubmit.co/ajax/info@albertihomebuyersllc.com", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          _subject: "New Cash Offer Request — Alberti Home Buyers",
+          name: fields.name.value.trim(),
+          phone: fields.phone.value.trim(),
+          email: fields.email.value.trim(),
+          address: fields.address.value.trim(),
+          condition: fields.condition.value,
+          timeline: fields.timeline.value,
+          message: form.querySelector("#message")?.value.trim() || "(none)",
+        }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Form submission failed");
+          return res.json();
+        })
+        .then(() => {
+          form.querySelectorAll(".field, .form-row, .btn-full, .form-fine").forEach((el) => {
+            el.style.display = "none";
+          });
+          if (success) success.hidden = false;
+          // Soft analytics hook
+          try {
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({ event: "cash_offer_submit" });
+          } catch (_) { /* no-op */ }
+        })
+        .catch(() => {
+          errorBox.hidden = false;
+          errorBox.textContent =
+            "Something went wrong sending your request. Please call 443-327-9292 and we'll take it from there.";
+          if (btn) btn.disabled = false;
+          if (label) label.hidden = false;
+          if (loading) loading.hidden = true;
         });
-        if (success) {
-          success.hidden = false;
-        }
-        // Soft analytics hook
-        try {
-          window.dataLayer = window.dataLayer || [];
-          window.dataLayer.push({ event: "cash_offer_submit" });
-        } catch (_) { /* no-op */ }
-      }, 900);
     });
 
     // Clear error state on input
